@@ -22,6 +22,37 @@ docker run \
 
 If the container exits without errors, then your data has been successfully imported and you are now ready to run the tile server.
 
+### Takeout Central deploy notes
+
+For deploying run the following commands, create a VM on your host of choice.
+SSL certs will be expected in the same directory as your nginx.conf prior to `docker-compose` command
+If on GCP, download Docker-compose following these steps: https://cloud.google.com/community/tutorials/docker-compose-on-container-optimized-os
+
+```bash
+cd ..
+mkdir renderaccount
+chown renderaccount/ $USER:$USER
+
+wget https://download.geofabrik.de/north-america/us-south-latest.osm.pbf 
+OR
+wget https://download.geofabrik.de/north-america/north-carolina-latest.osm.pbf 
+
+Import pbf to OSM
+docker run \
+  -v /home/renderaccount/us-south-latest.osm.pbf:/data.osm.pbf \
+  -v openstreetmap-data:/var/lib/postgresql/12/main \
+  overv/openstreetmap-tile-server \
+  import
+
+Run OSM with nginx in front of it
+docker-compose up
+
+prerender:
+    Create an interactive shell in the 'overv/openstreetmap-tile-server' container by following the steps below and running: docker container ls
+    https://github.com/Overv/openstreetmap-tile-server/issues/15
+    render_list --all -n 8 --tile-dir=/var/lib/mod_tile --min-zoom=1 --max-zoom=12 -m ajt
+```
+
 ### Automatic updates (optional)
 
 If your import is an extract of the planet and has polygonal bounds associated with it, like those from geofabrik.de, then it is possible to set your server up for automatic updates. Make sure to reference both the OSM file and the polygon file during the import process to facilitate this, and also include the `UPDATES=enabled` variable:
